@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PDF Text Extractor</title>
+  </head>
+  <body>
+    <h1>Upload a PDF</h1>
+    <form action="/" enctype="multipart/form-data" method="post">
+      <input name="file" type="file" accept=".pdf" required>
+      <input type="submit" value="Extract Text">
+    </form>
+
+    {% if extracted_text %}
+    <h2>Extracted Text:</h2>
+    <pre>{{ extracted_text }}</pre>
+    {% endif %}
+  </body>
+</html>
