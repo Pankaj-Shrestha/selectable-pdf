@@ -8,56 +8,50 @@ import ocrmypdf
 
 app = FastAPI()
 
-# Mount the static directory for assets like favicon
+# Mount static files (for favicon, CSS, etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Set up Jinja2 templates
+# Set up the templates directory
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    """Render the index.html form for uploading PDFs."""
+async def read_form(request: Request):
+    """Render the upload form."""
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/upload")
+@app.post("/upload", response_class=FileResponse)
 async def upload_pdf(file: UploadFile = File(...)):
-    """
-    Receives a PDF, processes it with OCRmyPDF using Tesseract configured for German,
-    and returns the OCR'd PDF file.
-    """
-    # Create a temporary file to store the uploaded PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_input:
+    """Accepts a PDF file, processes it with OCR (German language), and returns the new PDF."""
+    # Save the uploaded PDF to a temporary file.
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as input_pdf:
         content = await file.read()
-        temp_input.write(content)
-        temp_input.flush()
-        input_pdf_path = temp_input.name
+        input_pdf.write(content)
+        input_pdf.flush()
+        input_pdf_path = input_pdf.name
 
-    # Define output file path (same temporary path with a suffix)
+    # Define the output file path.
     output_pdf_path = input_pdf_path + "_ocr.pdf"
 
     try:
-        # Run OCRmyPDF with desired options:
-        # - 'language="deu"' loads the German language model (for umlauts, etc.)
-        # - 'deskew=True' straightens skewed pages
-        # - 'clean=True' cleans the input image to remove extraneous marks
+        # Run OCR on the PDF.
+        # Note: The "clean" option is omitted to avoid dependency on unpaper.
         ocrmypdf.ocr(
             input_pdf_path,
             output_pdf_path,
-            language="deu",
-            deskew=True,
-            clean=True
+            language="deu",  # Use German language to correctly recognize umlauts.
+            deskew=True      # Deskew pages before OCR.
         )
     except Exception as e:
-        # Ensure cleanup of the temporary input file before raising an error
+        # If an error occurs, remove the temporary file and return an HTTP error.
         if os.path.exists(input_pdf_path):
             os.remove(input_pdf_path)
         raise HTTPException(status_code=500, detail=f"OCR processing failed: {e}")
     finally:
-        # Remove the temporary input file if it exists
+        # Ensure the temporary input file is removed.
         if os.path.exists(input_pdf_path):
             os.remove(input_pdf_path)
 
-    # Return the OCR'd PDF as a file download
+    # Return the processed PDF to the client.
     return FileResponse(
         output_pdf_path,
         media_type="application/pdf",
