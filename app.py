@@ -1,33 +1,43 @@
-import io
-from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import HTMLResponse
+import os
+import tempfile
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
-import pdfplumber
+import ocrmypdf
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    # Render the form with no extracted text initially
-    return templates.TemplateResponse("index.html", {"request": request, "extracted_text": None})
+async def read_form(request: Request):
+    # Render the HTML form for file upload.
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/", response_class=HTMLResponse)
-async def extract_text(request: Request, file: UploadFile = File(...)):
-    file_contents = await file.read()
-    extracted_text = ""
-    try:
-        with pdfplumber.open(io.BytesIO(file_contents)) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    extracted_text += text + "\n"
-    except Exception as e:
-        extracted_text = f"An error occurred: {str(e)}"
+@app.post("/upload", response_class=FileResponse)
+async def upload_pdf(file: UploadFile = File(...)):
+    # Save the uploaded PDF temporarily.
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as input_pdf:
+        content = await file.read()
+        input_pdf.write(content)
+        input_pdf.flush()
+        input_pdf_path = input_pdf.name
+
+    # Define the output file path.
+    output_pdf_path = input_pdf_path + "_ocr.pdf"
     
-    # Render the same page with the extracted text
-    return templates.TemplateResponse("index.html", {"request": request, "extracted_text": extracted_text})
+    try:
+        # Process the PDF with OCR; this will add a hidden text layer.
+        ocrmypdf.ocr(input_pdf_path, output_pdf_path, deskew=True)
+    except Exception as e:
+        # In a real app, you might want to return an error page or JSON.
+        return {"error": str(e)}
+    finally:
+        # Clean up the input temporary file.
+        os.remove(input_pdf_path)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    # Return the new PDF to the client.
+    return FileResponse(
+        output_pdf_path, 
+        media_type="application/pdf", 
+        filename="ocr.pdf"
+    )
