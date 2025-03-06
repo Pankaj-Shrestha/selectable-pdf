@@ -1,14 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>PDF OCR Converter</title>
+  <meta charset="UTF-8">
+  <title>PDF OCR Converter</title>
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-top: 30px;
+      text-align: center;
+    }
+    input[type="file"] {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Upload PDF for OCR Conversion</h1>
-    <form action="/upload" enctype="multipart/form-data" method="post">
-        <input type="file" name="file" accept="application/pdf" required>
-        <button type="submit">Upload and Convert</button>
-    </form>
+  <h1>PDF OCR Converter</h1>
+  <p>Upload your scanned PDF to convert it into a searchable PDF with selectable text.</p>
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept="application/pdf" required>
+    <br>
+    <button type="submit">Upload and Convert</button>
+  </form>
 </body>
 </html>
