@@ -21,7 +21,7 @@ async def read_form(request: Request):
 
 @app.post("/upload", response_class=FileResponse)
 async def upload_pdf(file: UploadFile = File(...)):
-    """Accepts a PDF file, processes it with OCR (German language), and returns the new PDF."""
+    """Accepts a PDF, processes it with OCR (German language), and returns the new PDF."""
     # Save the uploaded PDF to a temporary file.
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as input_pdf:
         content = await file.read()
@@ -34,24 +34,23 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     try:
         # Run OCR on the PDF.
-        # Note: The "clean" option is omitted to avoid dependency on unpaper.
+        # Added force_ocr=True to override the "Tagged PDF" check.
         ocrmypdf.ocr(
             input_pdf_path,
             output_pdf_path,
-            language="deu",  # Use German language to correctly recognize umlauts.
-            deskew=True      # Deskew pages before OCR.
+            language="deu",  # Use German language model
+            deskew=True,     # Deskew pages before OCR
+            force_ocr=True   # Force OCR even if the PDF is tagged
         )
     except Exception as e:
-        # If an error occurs, remove the temporary file and return an HTTP error.
         if os.path.exists(input_pdf_path):
             os.remove(input_pdf_path)
         raise HTTPException(status_code=500, detail=f"OCR processing failed: {e}")
     finally:
-        # Ensure the temporary input file is removed.
         if os.path.exists(input_pdf_path):
             os.remove(input_pdf_path)
 
-    # Return the processed PDF to the client.
+    # Return the processed PDF as a file download.
     return FileResponse(
         output_pdf_path,
         media_type="application/pdf",
