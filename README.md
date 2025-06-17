@@ -80,32 +80,6 @@ No external dataset is used. All input PDFs are uploaded by users. OCR is perfor
 
 ---
 
-## 🐳 Docker (Optional)
-
-```bash
-docker build -t selectable-pdf .
-docker run -p 5000:5000 selectable-pdf
-```
-
-Visit: [http://localhost:5000](http://localhost:5000)
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome — especially ideas for better OCR accuracy, speed, or UI tweaks.
-
-Check [CONTRIBUTING.md](CONTRIBUTING.md) if you'd like to contribute.
-
----
-
-## 📄 License
-
-Licensed under the **MIT License**.  
-See [LICENSE](LICENSE) for more details.
-
----
-
 ## 📬 Contact
 
 - GitHub: [@Pankaj-Shrestha](https://github.com/Pankaj-Shrestha)
